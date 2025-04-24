@@ -63,8 +63,19 @@ class SecurePolynomial:
 
         assert self.dtype == other.dtype
         degree = self.degree + other.degree
+
+        mins_self  = (other.degree + 1)*(0,) + tuple(range(1, self.degree  + 1))
+        mins_other = (self.degree  + 1)*(0,) + tuple(range(1, other.degree + 1))
+
+        maxs_self   = tuple(range(1, self.degree  + 1)) + (other.degree + 1)*(self.degree  + 1,)
+        maxs_other  = tuple(range(1, other.degree + 1)) + (self.degree  + 1)*(other.degree + 1,)
         
-        raise NotImplementedError
+        ranges_self  = [ self.coefficients[min_:max_] for (min_, max_) in zip(mins_self,  maxs_self) ]
+        ranges_other = [other.coefficients[min_:max_] for (min_, max_) in zip(mins_other, maxs_other)]
+
+        coefficients = [mpc.in_prod(range_self, list(reversed(range_other))) for (range_self, range_other) in zip(ranges_self, ranges_other)]
+
+        return SecurePolynomial(coefficients)
 
     @mpc.coroutine
     async def evaluate_on_secret(self, x_s):
@@ -100,32 +111,37 @@ if __name__ == "__main__":
     p2 = SecurePolynomial([mpc.random.randint(dtype, -63, 64) for _ in range(deg2 + 1)])
 
     p3 = p1 + p2 
-#    p4 = p1 * p2
+    p4 = p1 - p2
+    p5 = p1 * p2
 
     x_s = mpc.random.randint(dtype, -63, 64)
     x_p = 42
 
     y1 = mpc.run(mpc.output(p1.evaluate_on_secret(x_s)))
     y2 = mpc.run(mpc.output(p2.evaluate_on_public(x_p)))
-#    y1 = mpc.run(mpc.output(p3.evaluate_on_secret(x_s)))
-#    y2 = mpc.run(mpc.output(p4.evaluate_on_public(x_p)))
+    y3 = mpc.run(mpc.output(p3.evaluate_on_secret(x_s)))
+    y4 = mpc.run(mpc.output(p4.evaluate_on_public(x_p)))
+    y5 = mpc.run(mpc.output(p4.evaluate_on_secret(x_s)))
 
     print(f"evaluating p1 on secret value x_s gives {y1}")
     print(f"evaluating p2 on public value x_p gives {y2}")
-#    print(f"evaluating p1+p2 on secret x_s gives {y3}")
-#    print(f"evaluating p1*p2 on public x_p gives {y2}")
+    print(f"evaluating p1+p2 on secret value x_s gives {y3}")
+    print(f"evaluating p1-p2 on public value x_p gives {y4}")
+    print(f"evaluating p1*p2 on public value x_s gives {y5}")
 
     p1_public = [mpc.run(mpc.output(x)) for x in p1.coefficients]
     p2_public = [mpc.run(mpc.output(x)) for x in p2.coefficients]
     p3_public = [mpc.run(mpc.output(x)) for x in p3.coefficients]
-#    p4_public = [mpc.run(mpc.output(x)) for x in p4.coefficients]
+    p4_public = [mpc.run(mpc.output(x)) for x in p4.coefficients]
+    p5_public = [mpc.run(mpc.output(x)) for x in p5.coefficients]
 
     print("revealed values:")
 
     print(f"p1(x) = {format_polynomial(p1_public)}")
     print(f"p2(x) = {format_polynomial(p2_public)}")
-    print(f"p3(x) = {format_polynomial(p3_public)}")
-#    print(f"p4(x) = {format_polynomial(p4_public)}")
+    print(f"(p1+p2)(x) = {format_polynomial(p3_public)}")
+    print(f"(p1-p2)(x) = {format_polynomial(p4_public)}")
+    print(f"(p1*p2)(x) = {format_polynomial(p5_public)}")
 
     print(f"x_s = {mpc.run(mpc.output(x_s))}")
     print(f"x_p = {x_p}")
