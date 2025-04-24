@@ -39,6 +39,10 @@ class SecurePolynomial:
         self.dtype = dtype
         self.coefficients = coefficients
 
+    def __neg__(self):
+
+        return SecurePolynomial([-a for a in self.coefficients])
+
     def __add__(self, other):
 
         assert self.dtype == other.dtype
@@ -53,7 +57,7 @@ class SecurePolynomial:
 
     def __sub__(self, other):
 
-        raise NotImplementedError
+        return self + (-other)
 
     def __mul__(self, other):
 
