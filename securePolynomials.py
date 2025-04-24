@@ -75,10 +75,12 @@ class SecurePolynomial:
     @mpc.coroutine
     async def evaluate_on_public(self, value):
 
-        value = self.dtype(value)
         await mpc.returnType(self.dtype)
         
-        powers = list(map(pow, repeat(value), range(self.degree + 1)))
+        powers = map(pow, repeat(value), range(self.degree + 1))
+        powers = map(self.dtype, powers)
+        powers = list(powers)
+
         return mpc.in_prod(self.coefficients, powers)
 
 
