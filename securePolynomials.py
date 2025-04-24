@@ -5,10 +5,10 @@ from mpyc.runtime import mpc
 
 def format_polynomial_term(coefficient, degree):
 
-    x = f"x^{degree}" if degree >= 2 else "x" if degree == 1 else ""
+    x_power = f"x^{degree}" if degree >= 2 else "x" if degree == 1 else ""
 
     if coefficient:
-        return str(coefficient) + x + " + "
+        return str(coefficient) + x_power + " + "
 
     else:
         return ""
@@ -63,21 +63,21 @@ class SecurePolynomial:
         raise NotImplementedError
 
     @mpc.coroutine
-    async def evaluate_on_secret(self, value):
+    async def evaluate_on_secret(self, x_s):
 
-        assert type(value) == self.dtype
+        assert type(x_s) == self.dtype
         await mpc.returnType(self.dtype)
         
-        step = lambda x, y: value*x + y
+        step = lambda current, a: x_s*current + a
 
         return mpctools.reduce(step, reversed(self.coefficients[:-1]), self.coefficients[-1])
 
     @mpc.coroutine
-    async def evaluate_on_public(self, value):
+    async def evaluate_on_public(self, x_p):
 
         await mpc.returnType(self.dtype)
         
-        powers = map(pow, repeat(value), range(self.degree + 1))
+        powers = map(pow, repeat(x_p), range(self.degree + 1))
         powers = map(self.dtype, powers)
         powers = list(powers)
 
