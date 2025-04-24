@@ -82,10 +82,13 @@ class SecurePolynomial:
 
         assert type(x_s) == self.dtype
         await mpc.returnType(self.dtype)
-        
-        step = lambda current, a: x_s*current + a
 
-        return mpctools.reduce(step, reversed(self.coefficients[:-1]), self.coefficients[-1])
+        res = self.coefficients[-1]
+
+        for a in reversed(self.coefficients[:-1]):
+            res = x_s*res + a
+
+        return res
 
     @mpc.coroutine
     async def evaluate_on_public(self, x_p):
@@ -93,10 +96,8 @@ class SecurePolynomial:
         await mpc.returnType(self.dtype)
         
         powers = map(pow, repeat(x_p), range(self.degree + 1))
-        powers = map(self.dtype, powers)
-        powers = list(powers)
 
-        return mpc.in_prod(self.coefficients, powers)
+        return mpc.sum([a * power for (a, power) in zip(self.coefficients, powers)])
 
 
 if __name__ == "__main__":
