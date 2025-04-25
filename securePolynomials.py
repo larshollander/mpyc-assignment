@@ -1,6 +1,5 @@
 from asyncio import Future
-from itertools import repeat
-from mpyc import mpctools
+from itertools import accumulate, repeat
 from mpyc.runtime import mpc
 
 def format_polynomial_term(coefficient, degree):
@@ -95,7 +94,7 @@ class SecurePolynomial:
 
         await mpc.returnType(self.dtype)
         
-        powers = map(pow, repeat(x_p), range(self.degree + 1))
+        powers = accumulate(self.degree * [x_p], type(x_p).__mul__, initial=x_p**0)
 
         return mpc.sum([a * power for (a, power) in zip(self.coefficients, powers)])
 
